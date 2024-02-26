@@ -13,10 +13,32 @@ SERVER_PORT = 12345
 Initially, we will be running the client and server both locally for ease of testing during the early development process, so we set `SERVER_NAME` to `'localhost'` and pick port 12345 to use for `SERVER_PORT`. These can be changed in the future if you wish to use a different address/port.
 
 ```python
-print('Starting server on port', SERVER_PORT)
+print(f"Starting server on '{SERVER_NAME}' port {SERVER_PORT}")
 ```
-Next we print out a message to let us know the server is starting and remind us of what port it is on.
+Next we print out a message to let us know the server is starting and remind us of what network address and port it is on. Rather than using the `print("Starting server on '{}' port {}".format(SERVER_NAME, SERVER_PORT))` technique we used before, we are using a form of Python shorthand to do the same thing. Putting an `f` before the start of the string to be printed is telling Python to do the exact same thing as calling `.format(SERVER_NAME, SERVER_PORT)` on the string, but instead of needed to pass the parameters as arguments to `.format()`, we can put them directly inside the placeholder braces `{}`, as shown above. Which form we use is a matter of personal preference, but some people find this notation easier to read because the variables can be seen directly inside the placeholder braces.
 
+One other thing to note here is that while Python doesn't care whether we use single `'` or double `"` quotation marks for strings, when we want to actually print literal quotation marks, it's easiest to use the ones we do not want to print on the outside. That is, both `print("Hello, world")` and `print('Hello, world')` will output:
+```
+Hello, world
+```
+Python doesn't care which one we use. However, if we want to put the word `Hello` in quotes, then `print("'Hello', world")` will output:
+```
+'Hello', world
+```
+whereas `print('"Hello", world')` will output:
+```
+"Hello", world
+```
+Note that rather than nesting different types of quotation marks, we can also use backslashes to "escape" characters we want to literally print. To do this, simply put a backslash before the character we wish to print. This tells Python that the second and third `'` symbols are literally part of the string to be printed, rather than the closing `'` symbol to match the first opening `'` symbol. For example:
+```python
+print('\'Hello\', world')
+```
+will also output:
+```
+'Hello', world
+```
+
+To get back to our code, after printing out the message that the server is starting, we need to setup and start the server itself:
 ```python
 start_server()
 ```
@@ -27,7 +49,22 @@ def start_server():
     listen_socket = initialize_server_socket()
     handle_new_connections_simple(listen_socket)
 ```
-To define a new function, we 
+To define a new function, we start with the `def` keyword, then the name of the function, followed by any arguments in parentheses, then a colon symbol `:`. The body of the function is intended below this function header line.
+
+Note that we place this function definition _before_ the main code of our program (the code above that prints a message and calls `start_server()`). This way by the time the Python gets to the main code, it already has the definition of `start_server`. In order, our whole program so far looks like:
+
+```python
+SERVER_NAME = 'localhost'
+SERVER_PORT = 12345
+
+def start_server():
+    listen_socket = initialize_server_socket()
+    handle_new_connections_simple(listen_socket)
+
+print(f"Starting server on '{SERVER_NAME}' port {SERVER_PORT}")
+start_server()
+```
+
 Because this function is really just to organize our code, it doesn't need any arguments. We're going to break down the operations of the server into two main phases-- setting up, and handling new connections. We will call `initialize_server_socket` to obtain a new socket that will listen for incoming connections. We then pass this new `listen_socket` as an argument to the function `handle_new_connections_simple`, which will listen on that socket for any incoming connections, and process them appropriately. Neither of these are existing Python functions-- they are both functions we made up that we will therefore have to define and implement.
 
 ## Creating a listening socket
@@ -36,7 +73,7 @@ Let's start with defining `initialize_server_socket`:
 def initialize_server_socket():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ```
-This function does not require any arguments. It first uses the Python `socket` module to request a new socket. The function `socket` is confusingly also the name of a function of the `socket` module itself, which is why it is called as `socket.socket()`. Just as before, we use the `.` symbol to access a function that is part of a larger object. In this case, we are trying to call the `socket()` function contained inside the `socket` module. Normally functions won't have the exact same name as the module that contains them, but `socket` is unfortunately an exception to this general trend.
+By convention, this function is also generally placed _before_ `start_server()`, so that `start_server` already knows what `initialize_server_socket()` does. However, as long as a function is declared _before_ it is used in the code, the order of function declarations does not matter in Python. This function does not require any arguments. It first uses the Python `socket` module to request a new socket. The function `socket` is confusingly also the name of a function of the `socket` module itself, which is why it is called as `socket.socket()`. Just as before, we use the `.` symbol to access a function that is part of a larger object. In this case, we are trying to call the `socket()` function contained inside the `socket` module. Normally functions won't have the exact same name as the module that contains them, but `socket` is unfortunately an exception to this general trend.
 
 The `socket.socket()` function takes a few arguments. The first argument specifies what type of network protocol that you want a socket for (the Network Layer in the OSI model). For IPv4, use the value `socket.AF_INET`. For IPv6, you can use the value `socket.AF_INET6`. Some operating systems support other types of network protocols as well. The second argument specifies the type of socket requested within that network protocol (the Transport Layer in the OSI model). In this case, we want a TCP socket, so we use `socket.SOCK_STREAM`. The reason we put the `socket.` in front of all these values is because they are all defined inside of the Python `socket` module, so we need to use the `.` symbol in order to access them inside that module.
 
@@ -111,6 +148,8 @@ Note that both the `handle_client` function definition and its body of code are 
 ### Receiving data
 `handle_client` also uses a `while True:` statement to loop forever, so it keeps receiving incoming data as long as it is available. Each pass through the loop, it can receive up to 1024 bytes of incoming data using the `recv` function, which is another method function contained in socket objects. The argument to `recv` is the maximum number of bytes we want to receive at a time, in this case 1024. We could have picked a different number, but too small of a size could make the program less efficient (since we would need a lot more times through the loop to receive the same amount of data), and too large of a size might use too much memory (because Python needs to set aside this many bytes of memory to hold the incoming data), so 1024 is a reasonable value for now. Experimenting with this parameter could allow us to tweak network performance and memory usage further. The result (return value) of the `recv` function is stored in the variable `data`.
 
+Note that just because a client sends us 500 bytes of data at once, doesn't mean we will actually receive all 500 bytes in a single call to the `recv` function, despite that fact that it *can* receive up to 1024 bytes at a time. Due to the ways different operating systems and network stacks are implemented, we might receive all 500 bytes at once, or 10 bytes in the first `recv` call, followed by 470 bytes in the next `recv` call, or any other possible combination of one or many sets of data. Sometimes a network stack or even a hardware NIC itself will buffer incoming data until it receives a certain amount or a certain amount of time has passed. When we test our program locally, we likely will get the data all at once, however in real-world conditions from servers on the other side of the world under heavy load, the situation might be quite different. This is one reason why our testing strategy has to be broad enough to try all sorts of different situations. By using a `while` loop for our `recv` calls, we ensure that no matter how many chunks the data is separated into when we receive it, we will be able to process it all.
+
 If the `recv` function is called after a socket is closed and all data has been received, it will return the special value `None` instead of data. `None` is essential an "empty" variable in Python-- it contains no data. In Python, `None`, `0`, and `False` will all evaluate to `False`, for example in a condition after an `if` or `while` statement. The keyword `not` will negate a `True` or `False` expression. Therefore, `not data` will be `True` if and only if `data` is `False`, `0`, or `None`.
 ```python
             if not data:
@@ -166,9 +205,45 @@ python3 ServerPython.py
 ```
 Output:
 ```
-Starting server on port 12345
+Starting server on 'localhost' port 12345
 ```
-So far, so good! The program correctly prints the port it is listening for new connections on.
+So far, so good! The program correctly prints the port it is listening for new connections on. Let's hit Cntl-C to kill the server.
+
+What if we want to show the proper machine name instead of just 'localhost'? The `socket` module provides a member function for this as well, `socket.gethostname()`. Instead of using localhost, let's set `SERVER_NAME` to this value, right before we call `print` in our code:
+```python
+SERVER_NAME = socket.gethostname()
+print(f"Starting server on '{SERVER_NAME}' port {SERVER_PORT}")
+start_server()
+```
+Let's try running this server again:
+```bash
+python3 ServerPython.py
+```
+Output:
+```
+Starting server on 'server27' port 12345
+Traceback (most recent call last):
+  File "/usr/local/linuxexamples/basic/ServerPython.py", line 173, in <module>
+    start_server()
+  File "/usr/local/linuxexamples/basic/ServerPython.py", line 147, in start_server
+    listen_socket = initialize_server_socket()
+  File "/usr/local/linuxexamples/basic/ServerPython.py", line 141, in initialize_server_socket
+    sock.bind((SERVER_NAME, SERVER_PORT))
+socket.gaierror: [Errno 8] nodename nor servname provided, or not known
+```
+This example was created on a machine with a local name of 'server27'. Your output may vary slightly based on your machine name and operating system. While our program correctly output the local name of the machine rather than just 'localhost', the `Traceback` message and everything below it show an error that was encountered. Any error not handled in Python will automatically exit the program. In this case, we can look to the bottom of the message to see the actual error -- errno 8, which means that no valid address was provided to the argument for `sock.bind()`. Above this message, we can see the entire chain of function calls in our program that led to the line of code where the error occurred. This can be useful for pinpointing the source of an error.
+
+Why did this error happen in this case? `sock.bind()` tried to resolve the local machine name 'server27' to an IP address, however, the DNS server used doesn't know who 'server27' is, since it only appears locally on our machine. In a properly configured enterprise network, our local DNS server might be able to resolve these local computer names, in which case a valid IP address would be found and the program would work as intended. Alternatively, on some operating systems, there is a `hosts` file or Control Panel setting where entries can be added. We could add the local machine name to this, to make it resolve to the IP address 127.0.0.1, which would fix the problem.
+
+In this case, for maximum compatibility, we are just going to go back to using `localhost` as the server name, since that is already set up to resolve to 127.0.0.1. Simply remove the `SERVER_NAME = socket.gethostname()` we just added, and run the program again:
+
+```bash
+python3 ServerPython.py
+```
+Output:
+```
+Starting server on 'localhost' port 12345
+```
 
 Let's try to connect to the server. Eventually, we will write another program to be the client, but for testing, we will use the *netcat* program (also called `nc`). `nc` is installed on many operating systems by default, but if it is not, you can download it. In an apt-aware Linux distribution (such as Debian or Ubuntu), you can also install it with `apt-get install netcat`.
 
@@ -201,34 +276,3 @@ Hello
 The `nc` program shows what we typed and sent to the server, followed by the message we received back from the server (which is the same as what we typed in `nc`).
 
 You can send more data to experiment further, or press Ctrl-C to kill the `nc` program. You can also instead press Ctrl-D in `nc` at the input prompt, which will send an End-of-File (EOF) message, indicating that no more data exists from the client side of the connection, and will cleanly close the socket. Because the server program does not accept user input, you will need to use Ctrl-C to kill the server. We will discuss this distinction in more detail later.
-
-## SSL setup
-TBD:
-
-To create a server.crt (certificate) and server.key (private key) file, you can use OpenSSL, a widely used software library for applications that secure communications over computer networks. Here are the steps:
-
-Generate a private key:
-
-```bash
-openssl genrsa -out server.key 2048
-```
-
-This command generates a 2048-bit RSA private key and writes it to a file named server.key.
-
-Generate a Certificate Signing Request (CSR):
-
-```bash
-openssl req -new -key server.key -out server.csr
-```
-
-This command will prompt you to enter information that will be incorporated into your certificate request. You'll need to provide the "Common Name", which is the domain name for which you are requesting the certificate.
-
-Generate a self-signed certificate:
-
-```bash
-openssl x509 -req -days 365 -in server.csr -signkey server.key -out server.crt
-```
-
-This command generates a self-signed certificate from the CSR that is valid for 365 days. The certificate is written to a file named server.crt.
-
-Please note that these steps generate a self-signed certificate, which will not be trusted by clients by default. For a production server, you would typically use a certificate issued by a trusted Certificate Authority (CA).

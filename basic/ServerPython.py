@@ -167,9 +167,7 @@ def parse_command_line_arguments():
 
     return port
 
+# SERVER_NAME = socket.gethostname()
 SERVER_PORT = parse_command_line_arguments()
-print('Starting server on port', SERVER_PORT)
+print(f"Starting server on '{SERVER_NAME}' port {SERVER_PORT}")
 start_server()
-
-# TODO: locks, condition vairables, atomics, thread pool (with graceful shutdown without memory leaks)
-# gethostname, unit tests in client

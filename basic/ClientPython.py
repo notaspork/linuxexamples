@@ -116,22 +116,6 @@ class PriorityQueue:
     def clear(self):
         self.queue = []
 
-def start_client():
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sock.connect(('localhost', 12345))
-    with socket.create_connection((SERVER_NAME, SERVER_PORT)) as sock:
-        #with create_ssl_socket(sock) as ssock: (also change sock to ssock below)
-        send_data_simple(sock)
-        receive_data_simple(sock)
-    # sock.close()
-
-def send_data_simple(sock):
-    sock.sendall(b'Hello, world')
-
-def receive_data_simple(sock):
-    data = sock.recv(1024)
-    print('Received:', data)
-
 def create_ssl_socket(sock):
     context = ssl.create_default_context()
     context.check_hostname = False
@@ -145,6 +129,32 @@ def receive_data_simple_udp(sock):
     data, address = sock.recvfrom(1024)
     print('Received (from {}):'.format(address), data)
 
+def send_data_simple(sock):
+    sock.sendall(b'Hello, world')
+
+def receive_data_simple(sock):
+    data = sock.recv(1024)
+    print('Received:', data)
+
+def start_client_simple():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(('localhost', 12345))
+    send_data_simple(sock)
+    receive_data_simple(sock)
+    sock.close()
+
+def start_client_simple_udp():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    send_data_simple_udp(sock)
+    receive_data_simple_udp(sock)
+    sock.close()
+
+def start_client():
+    with socket.create_connection((SERVER_NAME, SERVER_PORT)) as sock:
+        #with create_ssl_socket(sock) as ssock: (also change sock to ssock below)
+        send_data_simple(sock)
+        receive_data_simple(sock)
+    
 def create_example_transactions():
     return [
         {
@@ -161,8 +171,6 @@ def create_example_transactions():
         }
     ]
 
-
-
 def sort_by_price(tList):
     def get_price(t):
         return t['price']
@@ -172,4 +180,4 @@ def compute_average_price(transactions):
     return sum([t['price'] for t in transactions]) / len(transactions)
 
 print('Starting client...')
-start_client()
+start_client_simple()
