@@ -4,118 +4,6 @@ import ssl
 SERVER_NAME = 'localhost'
 SERVER_PORT = 12345
 
-class HashTable:
-    def __init__(self, buckets):
-        self.table = [None] * buckets
-
-    def hash(self, key):
-        # return hash of key
-        return hash(key) % len(self.table)
-
-    def insert(self, key, value):
-        # insert value into table based on key, handling any collisions without losing data
-        if (self.table[self.hash(key)] == None):
-            self.table[self.hash(key)] = [(key,value)]
-        else:
-            # check if key already exists
-            for k,v in self.table[self.hash(key)]:
-                if k == key:
-                    # key already exists, replace value
-                    v = value
-                    return
-            self.table[self.hash(key)].append((key,value))
-        
-    def remove(self, key):
-        # remove first value from table that matches key
-        l = self.table[self.hash(key)]
-        if l == None:
-            return
-        else:
-            for k,v in l:
-                if k == key:
-                    l.remove((k,v))
-                    return
-
-    def get(self, key):
-        # return value from table based on key, or None if it is not found
-        l = self.table[self.hash(key)]
-        if l == None:
-            return None
-        else:
-            for k,v in l:
-                if k == key:
-                    return v
-            return None
-        
-    def getnthitem(self, n):
-        # return nth item in table
-        count = 0
-        for l in self.table:
-            if l != None:
-                for k,v in l:
-                    if count == n:
-                        return (k,v)
-                    else:
-                        count += 1
-        
-    def __len__(self):
-        # count number of items in table
-        count = 0
-        for l in self.table:
-            if l != None:
-                count += len(l)
-
-    def clear(self, buckets):
-        self.table = [None] * buckets
-
-class Stack:
-    def __init__(self):
-        self.stack = []
-
-    def push(self, item):
-        # add item to stack
-        self.stack.append(item)
-
-    def pop(self):
-        # remove last item from stack
-        self.stack.pop()
-
-    def popMany(self, n):
-        # remove last n items from stack
-        result = self.stack[-n:]
-        del self.stack[-n:]
-        return(result)
-        
-    def __len__(self):
-        return len(self.stack)
-
-    def clear(self):
-        self.stack = []
-
-class PriorityQueue:
-    def __init__(self):
-        self.queue = []
-
-    def enqueue(self, item, priority):
-        # insert item in priority queue based on priority
-        # higher priority number = higher priority
-        # if priority is same, then FIFO
-        # if priority is different, then insert in order
-        i = 0
-        while (i < len(self.queue)) and (priority <= self.queue[i][1]):
-            i += 1
-        self.queue.insert(i, (item, priority))
-        
-    def dequeue(self):
-        # remove item with highest priority from priority queue
-        return self.queue.pop(0)
-
-    def __len__(self):
-        return len(self.queue)
-    
-    def clear(self):
-        self.queue = []
-
 def create_ssl_socket(sock):
     context = ssl.create_default_context()
     context.check_hostname = False
@@ -158,16 +46,20 @@ def start_client():
 def create_example_transactions():
     return [
         {
-            'name': 'Chicken',
-            'price': 8.49,
-            'transactionType': 100,
-            'transactionTime': 100
+            'username': 'Alice',
+            'IP': "10.0.0.9",
+            'port': 54362,
+            'accessTime': 100,
+            'dataSent' : 100,
+            'score' : 1.0
         },
         {
-            'name': 'Milk',
-            'price': 2.99,
-            'transactionType': 100,
-            'transactionTime': 100
+            'username': 'Bob',
+            'IP': "10.0.0.4",
+            'port': 24153,
+            'accessTime': 100,
+            'dataSent' : 100,
+            'score' : 1.0
         }
     ]
 
