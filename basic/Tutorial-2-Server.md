@@ -276,3 +276,133 @@ Hello
 The `nc` program shows what we typed and sent to the server, followed by the message we received back from the server (which is the same as what we typed in `nc`).
 
 You can send more data to experiment further, or press Ctrl-C to kill the `nc` program. You can also instead press Ctrl-D in `nc` at the input prompt, which will send an End-of-File (EOF) message, indicating that no more data exists from the client side of the connection, and will cleanly close the socket. Because the server program does not accept user input, you will need to use Ctrl-C to kill the server. We will discuss this distinction in more detail later.
+
+## Parsing command line arguments
+Let's add one more feature to the server before we move on to the client. As we have seen above, we can change the port the server listens on by changing the SERVER_PORT variable in the source code. However, we can make it even easier by allowing this to be set at run-time, as a _command line argument_.
+
+Command line arguments are commonly used in command line programs, for example, the program `ls` to list a directory in Unix:
+
+```bash
+ls -l /tmp
+```
+In this case, there are two arguments to the program `ls`. The first, `-l`, is sometimes also called a flag or option and is used to indicate that `ls` should list files in "long" format, which includes additional information such as owner and group information, modification date, size, and permissions flags. The second argument `/tmp` indicates the directory to list (without specifying this argument, `ls` will just list the current directory).
+
+In a POSIX-style environment such as the standard C library or Python's `sys` package, we refer to the program's name on the command line (`ls` in the above example) as argument #0, the next argument (`-l`) as argument #1, and so forth (making `/tmp` argument #2). While it might seem like the 0th argument is redundant, sometimes it is useful to know or display the exact name of the program as it was invoked, for debugging or error reporting. In Python, we often execute Python programs with a syntax like `python3 ServerPython.py -p 1000`. In this case, the _Python program's name_ `ServerPython.py` will be the 0th argument, the `-p` will be the 1st argument, and so on.
+
+To access these arguments in Python, we need to first include the `sys` package at the top of the source code:
+
+```python
+import sys
+```
+
+Next, we add a new function `parse_command_line_arguments`, which will return the port to start the server on. We will put this function directly before the first line of the main program, that is, right before the `print(f"Starting server on '{SERVER_NAME}' port {SERVER_PORT}")` line and after the `start_server()` function:
+```python
+def parse_command_line_arguments():
+    port = SERVER_PORT
+```
+This function does not need any arguments, as these will be provided from the command line. It starts by first setting the local variable `port` to the value of the global variable `SERVER_PORT`. This sets the default value of `port`, that is, the port to start on if there is no command line argument to change it.
+
+Next, we will use the list `sys.argv` provided by the Python `sys` package to look for a `-p` on the command line.
+```python
+    # Check if -p parameter is provided
+    if '-p' in sys.argv:
+```
+The `in` keyword checks to see if an item is contained in a list or other container variable. If a `-p` appears as any element of the list `sys.argv`, this expression will return _true_ and the following code will be executed:
+```python
+        index = sys.argv.index('-p')
+        if index + 1 < len(sys.argv):
+            port = int(sys.argv[index + 1])
+```
+This first line above tells us which list element contains the `-p` and stores that index number in the local variable `index`. The second line adds one to that index (so that the result refers to the next argument immediately following that index) and checks to make sure it is less than the total number of arguments in the list `sys.argv`. If so, it assigns the argument immediately after the indexed argument to the local variable `port`. For example, if we type:
+```bash
+python3 ServerPython.py -p 40000
+```
+The local variable `index` will be 1, since that is the position of `-p` in the list `sys.argv`. The local variable `port` will therefore contain the number at index 2, which is `40000`.
+
+In the above example, `len(sys.argv)` would be 3, since there are 3 command line arguments (at index 0, 1, and 2). Since the argument `40000` is at index 2 of the list `sys.argv`, this is valid and will execute. However:
+```bash
+python3 ServerPython.py -p
+```
+would not be valid and so the arguments will be ignored, since `index + 1` (which would be 2) will not be less than `len(sys.argv)` (which would also be 2). The `if index + 1 < len(sys.argv):` check prevents our program from crashing in this situation.
+
+Finally, we need to return the local variable `port`, so it is used later to set up the server on the indicated port number.
+```python
+    return port
+```
+
+Note that this completed `parse_command_line_arguments()` function will only find the first match, if `-p` appears more than once on the command line. This is not an issue for us, since specifying more than one port number is not something that makes sense in this program, but it is something to keep in mind for other situations.
+
+Note that instead of writing `port = sys.argv[index + 1]`, we passed this value to the `int()` function first. This is because `sys.argv[index + 1]` is a character string containing the characters `4`, `0`, `0`, `0`, and `0`. By using the `int()` function on this character string `int(sys.argv[index + 1])`, we force it to be converted to an integer instead. This practice is also known as _casting_ a variable. This is important since we want to make sure the port is a number rather than as a string. If we remove the `int()` call, we will get an error such as:
+```bash
+python3 ServerPython.py -p 40000
+```
+
+ServerPython Output:
+```python
+TypeError: an integer is required (got type str)
+```
+On the other hand, with the `port = int(sys.argv[index + 1])` call in place to ensure that `port` is an integer, we get:
+
+ServerPython Output:
+```python
+Starting server on 'localhost' port 40000
+```
+Note that for some lower port numbers to work correctly (anything below 1024 on most Unix-like operating systems), the program must have superuser privileges.
+
+## Parsing regular expressions
+Anyone who has spent a lot of time with Unix programs will recognize that in addition to the `-p` style flags, many programs also support a more human-readable syntax for passing arguments to programs, of the form `--port=40000`.
+
+To support both syntaxes in our program, we will add some additional code to detect this `--argument=value` syntax.
+
+We replace the last line (`return port`) of our prior `parse_command_line_arguments()` function with:
+```python
+    # Check if --port= parameter is provided
+    for arg in sys.argv:
+        match = re.match(r'--port=(\d+)', arg)
+        if match:
+            port = int(match.group(1))
+
+    return port
+```
+This code takes a different approach by using Python's regular expression library to match the desired pattern. The `for` loop iterates through each command line argument in the list `sys.argv`. Each time through this loop, it calls the `re.match()` function to detect any matches that start with the form `--port=NUMBER`, which is the regular expression passed as the first argument to `re.match()`. This argument starts with an `r` before the regular expression format string to tell Python that is a regular expression pattern, rather than a normal string. Therefore `r'--port=(\d+)'` tells `re.match()` to match text that starts with the exact text `--port=`, followed by a number. The expression `(\d+)` is a wildcard that matches a group of one or more successive decimal digits (i.e. `0`-`9`). Those not familar with regular expressions may wish to view more detailed documentation of Python's regular expression syntax at https://docs.python.org/3/library/re.html
+
+The second argument to `re.match()` is the string to check for this regular expression (i.e. each successive argument passed on the command line, one during each successive iteration of the `for` loop). If there is a match to a given argument, then the local variable `match` will contain a match object and evaluate to _true_, and the next lines of our function will assign `int(match.group(1))` to the local variable `port`.
+
+The `match` member function `match.group()` is provided by the `re` package to retrieve part of all of a matched regular expression. The argument (`1`) passed to `match.group()` returns the 1st captured group (specified in the regular expression string by '`(\d+)`'). If there were additional captured groups in that regular expression string, they could be returned instead by passing an argument of `2`, `3`, etc. to specify which captured group is desired. In this case, `match.group(1)` returns the number immediately after the character string `--port=`. As before, we use the `int()` function to ensure that this is stored as an integer.
+
+As before, it is not a valid command line argument to use `--port` more than once, so it doesn't matter in this circumstance. However, it is important to understand the implications of ordering in other situations. If the user specifies both the `-p` and `--port` flags, which one gets used? Since the local variable `port` is returned at the end of the function, its last value is all that matters. That means that if `-p` sets the local variable `port` and then the flag `--port` later sets `port` again, only the last value is returned. The same thing occurs if the user uses the `--port` flag more than once on the command line. If we want to only use the first matched value in either case, we can do this by returning `port` immediately after a match in either case, for example:
+```python
+def parse_command_line_arguments():
+    port = SERVER_PORT
+
+    # Check if -p parameter is provided
+    if '-p' in sys.argv:
+        index = sys.argv.index('-p')
+        if index + 1 < len(sys.argv):
+            port = int(sys.argv[index + 1])
+            return port
+
+    # Check if --port= parameter is provided
+    for arg in sys.argv:
+        match = re.match(r'--port=(\d+)', arg)
+        if match:
+            port = int(match.group(1))
+            return port
+
+    return port
+```
+Again, this doesn't really matter for this program, but thinking about the implications of unexpected situations (such as a user specifying multiple `--port` flags where we only expect one, or passing an invalid argument such as a `-p` that is not followed by a number) is important for security, since many exploits are based around providing inputs that a program was not designed for.
+
+Note that we also need to import the `re` package at the top of the source file in order for this function to work:
+```python
+import re
+```
+Now we can test our new function:
+```bash
+python3 ServerPython.py --port=40000
+```
+ServerPython Output:
+```python
+Starting server on 'localhost' port 40000
+```
+We can see that the server correctly starts on the specified port.
