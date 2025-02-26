@@ -271,6 +271,7 @@ Next, we define the special `__len__()` method to return the total number of ite
         for l in self.table:
             if l != None:
                 count += len(l)
+        return count
 ```
 This method again iterates through each bucket in the _class variable_ `table`, but we do not need to count one by one here, we can instead add the length of each successive bucket to our running total `count`, which is much faster than iterating through each individual item in each bucket.
 

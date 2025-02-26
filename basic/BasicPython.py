@@ -135,3 +135,34 @@ print("The string starts with '{}' and the middle is '{}'".format(s[0], s[2:5]))
 # But, you can create a new string and assign it to s
 s = "U" + s[1:]
 print(s)
+
+# Return a value from a function
+def increment(x):
+    x = x+1
+    return x
+
+original_value = 5
+new_value = increment(original_value)
+
+print(original_value)  # Output: 5
+print(new_value)       # Output: 6
+
+# Return a mutable object from a function
+def modify_list(lst):
+    lst.append(4)
+    return lst
+
+original_list = [1, 2, 3]
+modified_list = modify_list(original_list)
+
+print(original_list)  # Output: [1, 2, 3, 4]
+print(modified_list)  # Output: [1, 2, 3, 4]
+
+# Recursive function that returns multiple values
+def fibonacci(n):
+    if n == 0:
+        return 0, 1
+    a, b = fibonacci(n-1)
+    return b, a+b
+
+print(fibonacci(6))  # Output: (8, 13)

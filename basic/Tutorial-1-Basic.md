@@ -527,3 +527,57 @@ U can code.
 This changes the first character of the *string* `s` to 'U' by creating a new string that combines the string "U" and the *slice* from the second character of `s` to the end of `s`. By leaving the number after the colon `:` operator blank, it indicates we want everything in the *slice* to the very end of the string. The result of the combination of the "U" with the rest of the string `s` is then stored in the variable `s`. This works because you can't modify a string, but you *can* reassign the variable `s` to your newly created, merged, combination string.
 
 Why are strings *immutable*, but lists *mutable*? It is primarily an optimization that Python does for performance reasons. However, sometimes objects are also *immutable* for security reasons or to catch programming bugs. There is not always an easy way to know which types are *immutable* and which are *mutable*, so it is good to consult the appropriate documentation.
+
+### Return Types
+Understanding *mutable* vs *immutable* is also important in understanding functions. When a Python function returns a *mutable* type (such as a list), the caller receives a reference to the same object. This means that changes made to the returned object will affect the original object, which is similar to the concept we will see later about returning a type _by reference_ in C. On the other hand, while a Python function returns an *immutable* type, it cannot be modified, so it might as well just be a copy of the original object (and even if in Python's internal implemention it is still a reference to the original object for performance reasons, it does not matter, since it cannot be changed). This is similar to the concept we will see later about returning a type _by value_ in C.
+
+For example, consider the function `increment()` that receives an number as its one argument, adds one to that number, and returns the new result:
+```python
+def increment(x):
+    x = x+1
+    return x
+
+original_value = 5
+new_value = increment(original_value)
+
+print(original_value)  # Output: 5
+print(new_value)       # Output: 6
+```
+Note that in this example, we passed the `increment()` function an _integer_ variable, and so it returned an _integer_ type as well. But if we passed in a _floating-point_ number such as `5.0` it would have returned that same type, a _floating-point_ number. We call Python a _dynamically-typed_ language because the variable type of these parameters and return values is not known until the function is used, when it will utilize whatever type it is called with.
+
+The `increment()` function returns a new integer that is one greater than the input value. Even though it appears to modify the value of `x` inside the function, in Python integers are *immutable* types, so what is actually happening here is that we are creating a new variable `x` and initializing it with the new value of the old `x` plus `1`. So the `x` that is returned is really a copy, and it does not affect `original_value` outside the function, and only this copy is returned, not the original value. The original value remains unchanged because integers are *immutable*. This may be a bit counterintuitive and confusing, but even though you can assign them to new variables, Python's primitive types like _integers_ and _strings_ are all *immutable*, primarily for performance and predictability reasons, so each time you assign one you are actually creating a copy with the new value and the same name.
+
+In contrast, consider an example with a _list_, which is a *mutable* type. The function `modify_list()` will append a `4` to the end of the _list_ passed in as its one and only argument, then return this same _list_:
+```python
+def modify_list(lst):
+    lst.append(4)
+    return lst
+
+original_list = [1, 2, 3]
+modified_list = modify_list(original_list)
+
+print(original_list)  # Output: [1, 2, 3, 4]
+print(modified_list)  # Output: [1, 2, 3, 4]
+```
+We create the _list_ `original_list` containing `1`, `2`, and `3`, and pass `original_list` to the function `modify_list()`, storing the result of this function in the variable `modified_list`. When we print `original_list` and `modified_list`, we find that they are the same!
+
+The function `modify_list()` directly modified the *mutable* _list_ passed to it, and when it returned that same _list_ named `lst` as its return value, it was still a reference to `original_list`, so adding the `4` affected `original_list`.
+
+Let's take a look at one more function. The Fibonacci sequence is a mathematical series of numbers where each number is the sum of the two preceding ones (starting with 0 and 1), for example `0 1 1 2 3 5 8 13 ...`. We will write a function `fibonacci()`, which given a number `n` as an argument, returns both the `n`-th and `(n+1)`-th Fibonacci number. In Python, it is perfectly fine for functions to return more than one value, they just must be separated by commas. Remember that Python indicies start from the 0th position, so the 0th number is `0` and the 4th number is `3`.
+
+To implement this function, we need to determine the `n`th value of the Fibonacci sequence. But the only way to do this is to determine the `(n-1)`-th Fibonacci number first. We can call our _own function_ `fibonacci()` with the argument `n-1` to get this value. A self-referencing function is known as _recursive_. It can be very powerful, but we need to make sure there is a _base case_ with a value that we can determine without calling `fibonacci()`, or else we will loop indefinitely until the program runs out of resources. In this case, the _base case_ is when `n` is `0`. We can use a conditional `if` statement to test for this. If it is true, we will return `0` and `1` (separating the two return values with commas), the first two numbers in the Fibonacci sequence:
+```python
+def fibonacci(n):
+    if n == 0:
+        return 0, 1
+```
+If `n` is any other value, the code under the `if` clause will not be executed, meaning the program will not `return`, instead continuing to the next line. On the next line, we can get the two values (`n-1` and `n` from our perspective) that we store into variables `a` and `b` by calling our own `fibonacci()` function and passing `n-1` as the argument:
+```python
+    a, b = fibonacci(n-1)
+    return b, a+b
+
+print(fibonacci(6))  # Output: (8, 13)
+```
+When we print out `fibonacci(6)`, we correctly see the 6th and 7th numbers in the sequence, `8` and `13`.
+
+Note that we could simplify this function. Since we already know `n` when calling `fibonacci(n-1)`, the function does not really need to return 2 values. But it is a useful exercise for exploring how recursive functions and return values work.

@@ -23,15 +23,9 @@ class SSLContextSingleton:
             cls._instance.context.load_cert_chain(certfile="server.crt", keyfile="server.key")
         return cls._instance
 
-def setup_ssl_singleton(sock):
+def setup_ssl(sock):
     ssl_context = SSLContextSingleton()
     return ssl_context.context.wrap_socket(sock, server_side=True)
-
-
-def setup_ssl(sock):
-    context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-    context.load_cert_chain(certfile="server.crt", keyfile="server.key")
-    return context.wrap_socket(sock, server_side=True)
 
 # Simple single-client non-threaded mode
 def handle_new_connections_simple(sock):
@@ -135,7 +129,11 @@ def handle_new_connections_select(sock):
             except queue.Empty:
                 outputs.remove(s)
             else:
-                s.send(next_msg)
+                sent = s.send(next_msg)
+                if sent < len(next_msg):
+                    remaining_msg = next_msg[sent:]
+                    # Put the remaining message back at the front of the queue
+                    message_queues[s].queue.appendleft(remaining_msg)
 
         for s in exceptional:
             inputs.remove(s)
@@ -187,7 +185,11 @@ def handle_new_connections_poll(sock):
                 except queue.Empty:
                     poller.modify(s, select.POLLIN)
                 else:
-                    s.send(next_msg)
+                    sent = s.send(next_msg)
+                    if sent < len(next_msg):
+                        remaining_msg = next_msg[sent:]
+                        # Put the remaining message back at the front of the queue
+                        message_queues[s].queue.appendleft(remaining_msg)
             if flag & select.POLLERR:
                 poller.unregister(s)
                 s.close()
@@ -215,7 +217,7 @@ def handle_new_connections_thread_pool(sock):
             while True:
                 conn, addr = sock.accept()
                 print("Received new connection from ", addr)
-                # conn = setup_ssl(conn)
+                conn = setup_ssl(conn)
                 pool.submit(handle_client, conn)
         except:
             print("Shutting down gracefully...")

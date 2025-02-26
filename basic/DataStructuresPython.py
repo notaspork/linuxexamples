@@ -107,6 +107,7 @@ class HashTable:
         for l in self.table:
             if l != None:
                 count += len(l)
+        return count
 
     def clear(self, buckets):
         self.table = [None] * buckets
