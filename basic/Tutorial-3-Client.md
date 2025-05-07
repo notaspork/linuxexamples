@@ -163,6 +163,8 @@ Now we can test our UDP version of the client. Since the server still uses TCP, 
 ```bash
 nc -l -u 12345
 ```
+Note that some versions of `nc` might require a `-p` flag to specify a listening port, so if this does not work, we may need to try `nc -l -u -p 12345` instead. On the other hand, some versions of `nc` will only work without the `-p` flag, so check `nc -h` or `man nc` for the appropriate flags for the version in use if there are any issues.
+
 We use the `-l` flag to indicate that `nc` should listen for incoming connections, acting in the server's role. It will print any output it receives.
 
 We use the `-u` flag to indicate that `nc` should use UDP rather than TCP, so `nc -l -u 12345` will cause `nc` to listen for data on UDP port 12345.
