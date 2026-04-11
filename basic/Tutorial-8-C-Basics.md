@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 ```
 This is very similar to a Python function definition, with a few differences. Rather than a colon `:` and indentation in a function definition as in Python, we put the contents of a function instead curly braces `{` and `}`. There is no `def` keyword used in C, but the return type of the function is declared to be an `int` (integer). We put the data type before its use in the declaration: `int` before `main` since the `main()` function's return type is `int`, and `int` before `argc` because `argc's` data type is `int`. The function takes 2 arguments (named `argc` and `argv` in this case), and returns a value of 0 on success. If we return a non-zero value, the operating system will know that our program exited with a failure condition. The meaning of specific codes is typically defined by the operating system and/or the application developer. On Unix-like systems, this return value is accessible using the `$?` variable in the shell after the program exits (`echo $?` will print the return value).
 
-In C, all variables, whether global, local, function parameters, return values, or any other type of variable, are _explicitly typed_ rather than _implicitly typed_ as they are in Python. This means that we need to tell the C compiler exactly what type to use for each variable at compile time, as opposed to Python, where the compiler infers the type of the variable at runtime, based on what is assigned to it or how it is used. While C's _explicit typing_ requires more effort on our part when writing the initial code, it also allows the compiler to better optimize code and detect type-related errors at compile time, rather than at runtime as would happen in Python. For example, the following Python code would generate an `TypeError` `Exception`:
+In C, all variables, whether global, local, function parameters, return values, or any other type of variable, are _explicitly typed_ with a specific _data type_ rather than _implicitly typed_ as they are in Python. This means that we need to tell the C compiler exactly what type to use for each variable at compile time, as opposed to Python, where the compiler infers the type of the variable at runtime, based on what is assigned to it or how it is used. While C's _explicit typing_ requires more effort on our part when writing the initial code, it also allows the compiler to better optimize code and detect type-related errors at compile time, rather than at runtime as would happen in Python. For example, the following Python code would generate an `TypeError` `Exception`:
 ```python
 s = "Test"
 x = s + 4
@@ -76,9 +76,9 @@ void main(void)
 `void` is a special data type that represents the lack of an argument or return value. It is not a zero, it is an indicator that there is nothing there. When `void` is put before the word `main`, it tells the C compiler that there is no return argument at all. The compiler will therefore raise an error if we try to `return` a value from this function. Similarly, when `void` is used for the argument list, it means that the function has no arguments. In this case, the operating system still passes the same `argc` and `argv` information to our program, since the function signature used by the underlying operating system does not change, but our `main()` function just ignores them.
 
 ## Data Types
-Before we add additional code, we should understand some of the different data types used in C.
+Before we add additional code, we should understand some of the different _data types_ used in C.
 
-In C, `char`, `short`, `int`, `long`, `long long`, `float`, `double`, `long double`, and `void` are all data types. They differ in the amount of memory they consume and the range of values they can represent. The exact sizes of many of these variables can be platform-dependent, but there are some standards:
+In C, `char`, `short`, `int`, `long`, `long long`, `float`, `double`, `long double`, and `void` are all _data types_. They differ in the amount of memory they consume and the range of values they can represent. The exact sizes of many of these variables can be platform-dependent, but there are some standards:
 
 `char` is used to store a single character and always requires 1 byte of memory (per the C standards, including ISO C9899, C89, C11, C17, etc.). The range of values is -128 to 127 _(signed)_ or 0 to 255 _(unsigned)_. On most platforms, `char` is _signed_ by default. To explictly treat `char` as _unsigned_, we can use the type `unsigned char` rather than `char`.
 
@@ -101,7 +101,7 @@ When it is important that a number be a specific size, for example when serializ
 If portability and consistency across platforms are a concern, using the specific sized types like `int64_t` are generally a better choice because they guarantee the exact same width on all platforms. Note that there are also specific sized types that begin with that letter 'u', like `uint8_t` and `uint32_t`, that represent _unsigned_ types of the specific number of bits indicated.
 
 ## Variables
-Just as in Python, the scope of C variables can vary based on where and how they are declared. We can declare _global variables_ at the top of a C source code file, before any functions, to ensure that they are in scope for the entire file.
+Just as in Python, the _scope_ of C variables can vary based on where and how they are declared. We can declare _global variables_ at the top of a C source code file, before any functions, to ensure that they are in _scope_ for the entire file.
 
 For our server, we want to declare 2 _global variables_, a string to represent the pathname to the file used to store our log data, which we will call `gFilePath`, and an integer to represent the port number our server will listen on, which we will call `gNetworkPort`:
 ```c
@@ -128,7 +128,7 @@ void variable_test(void) {
     printf("Test function called\n");
 }
 ```
-This function does not return a value, so we use the data type `void` before the function's name in its definition. It also does not take any arguments, so we use `void` again in its parameter list.
+This function does not return a value, so we use the data type `void` before the function's name in its definition. It also does not take any arguments, so we use `void` again in its parameter list. Functions that return `void` are also known as _procedures_.
 
 As with `main()` the function's code is contained within curly braces `{}`. We start with a single line that prints a messages stating that this function was called to the system's standard output (the console/command line on most systems). This line uses the C library function call `printf()`, which takes as its first parameter the string to be printed. Note that C strings **must** use double quotation marks, unlike in Python where they can be enclosed in either single or double quotation marks. In C, single quotation marks are only used for single character `char`s, not strings. The `\n` at the end of the printed string indicates a newline, which is not automatically printed in C, unless we specify it as we do here. Finally, we include a semicolon `;` after the `printf()` function call to indicate that it is the end of our command.
 
@@ -199,7 +199,7 @@ printf("gNetworkPort: %d\n", gNetworkPort);
 ```
 This utilizes the `printf()` command using a special placeholder that begins with a percent `%` symbol. This is somewhat similar to the `{}` placeholder symbols used in Python strings. `%d` will be substituted by the decimal number passed as an additional argument to `printf()`. As with Python's `.format()` method, if multiple placeholders are used, multiple additional arguments must be supplied. Other common placeholders include `%s` for a string or `%f` for a floating-point number, but the `man` page for `printf` lists many more, along with various modifiers that can be used with them.
 
-Much as in Python, in addition to _global variables_, we can also use _local variables_ that are more limited in scope.  We declare _local variables_ the same way we declare _global variables_, except we do so inside of the function or scope they will affect:
+Much as in Python, in addition to _global variables_, we can also use _local variables_ that are more limited in _scope_.  We declare _local variables_ the same way we declare _global variables_, except we do so inside of the function or _scope_ they will affect:
 ```c
 void variable_test(void) {
     double   f;
@@ -217,7 +217,7 @@ As shown above, C supports a fairly flexible syntax for variable declarations, b
 
 In addition, we can declare arrays in C with brackets after the variable's name, such as `long array[10]` above. The number inside the brackets indicates the size of the array. Arrays declared in C in this manner are fixed in size and generally cannot be resized later. We can also declare multi-dimensional arrays with 2, 3, 4, or even more sets of brackets, each specifying the size of the array in that dimension.
 
-In older versions of C, _local variables_ could only be declared at the beginning of a block of code specified by curly braces `{}` (such as a function's body or an `if` clause containing braces), however virtually all modern C compilers support variable declarations throughout the code.
+In older versions of C, _local variables_ could only be declared at the beginning of a block of code specified by curly braces `{}` (such as a function's body or an `if` clause containing braces), however virtually all modern C compilers support variable declarations throughout the code. Note that a variable only has _scope_ from the line it is declared, until the end of the loop or clause (the block of code specified by curly braces `{}`) that contains it. This is why a variable declared inside of a function is a _local variable_ that is only valid (in _scope_) inside that function.
 
 If next in the function, we print out the values of some of these variables using `printf`:
 ```c
@@ -325,7 +325,7 @@ For example, to use a `for` loop to replace the above `while` loop, we can write
     }
     printf("\n");
 ```
-After printing the title of the line as before, this `for` loop has 3 parts within its parentheses. First, we initialize an index variable `i` to `0`. While we could have also used the pre-existing variable `d` as we did before, in this case we actually define the variable `i` right inside the initialization part of the `for` loop. This gives it scope that is limited to the `for` loop itself (both the parentheses and the following clause).
+After printing the title of the line as before, this `for` loop has 3 parts within its parentheses. First, we initialize an index variable `i` to `0`. While we could have also used the pre-existing variable `d` as we did before, in this case we actually define the variable `i` right inside the initialization part of the `for` loop. This gives it _scope_ that is limited to the `for` loop itself (both the parentheses and the following clause).
 
 Second, we tell the C compiler that we want to keep iterating as long as `i<10`, which is essentially the same condition we used in the `while` loop above, ensuring that we stop after index `9`.
 
