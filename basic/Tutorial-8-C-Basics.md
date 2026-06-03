@@ -112,7 +112,7 @@ The data type precedes the variable's name, in this case `char*` for a the file 
 
 The use of a letter 'g' before _global variable_ names is used by certain programming style standards, but there are many others. The naming conventions for variables will ultimately be driven by the standards used by our organization. Note that C requires a semicolon after each variable declaration, and extra whitespace is ignored.
 
-While not required, it also good programming practice to provide default values for _global variables_. This way, if they are accidently used before they are initialized, they will not have unexpected results, which could include incorrect data values,program crashes, and security vulnerabilities. Therefore, we will initialize them to specific, but clearly invalid, values:
+While not required, it also good programming practice to provide default values for _global variables_. This way, if they are accidently used before they are initialized, they will not have unexpected results, which could include incorrect data values,program crashes, and security vulnerabilities. Therefore, we will initialize them to specific, but clearly invalid, values. This can be done later, but it is generally best to combine them with the initial variable declaration:
 ```c
 char* gFilePath = NULL;
 int gNetworkPort = -1;
